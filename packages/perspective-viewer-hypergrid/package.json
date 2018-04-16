@@ -36,7 +36,7 @@
     "@jpmorganchase/perspective-common": "^0.1.8",
     "babel-polyfill": "^6.26.0",
     "babel-runtime": "^6.26.0",
-    "fin-hypergrid": "^2.1.6",
+    "fin-hypergrid": "^2.1.7",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
