@@ -287,7 +287,7 @@ function PerspectiveDataModel(grid) {
         // Override setData
         setData: function (dataPayload, schema) {
             this.viewData = dataPayload;
-            this.source.setData(dataPayload, schema);     
+            this.source.setData(dataPayload, schema);
         },
 
         // Is the grid view a tree
@@ -499,7 +499,7 @@ function null_formatter(formatter, null_value = '') {
     }
     return formatter
 }
-  
+
 function is_subrange(sub, sup) {
     if (!sup) {
         return false;
@@ -514,9 +514,9 @@ const OFFSET_SETTINGS = 5;
 
 /**
  * Estimate the visible range of a Hypergrid.
- * 
- * @param {any} grid 
- * @returns 
+ *
+ * @param {any} grid
+ * @returns
  */
 function estimate_range(grid) {
     let range = Object.keys(grid.renderer.visibleRowsByDataRowIndex);
@@ -539,11 +539,11 @@ function CachedRendererPlugin(grid) {
                 let updated = await grid._updating_cache;
                 if (updated) {
                     grid._updating_cache = undefined;
-                    grid._cached_range = range;  
+                    grid._cached_range = range;
                 }
                 return updated;
             } else if (!is_subrange(range, grid._cached_range)) {
-                return false; 
+                return false;
             }
         }
         return true;
@@ -629,7 +629,7 @@ registerElement(TEMPLATE, {
                 var host = this.querySelector('#mainGrid');
 
                 host.setAttribute('hidden', true);
-                this.grid = new Hypergrid(host, { Behavior: JSONBehavior });
+                this.grid = new Hypergrid(host);
                 host.removeAttribute('hidden');
 
                 this.grid.installPlugins([
@@ -731,8 +731,8 @@ async function grid(div, view, hidden, task) {
     this[PRIVATE] = this[PRIVATE] || {};
 
     let [nrows, json, schema, tschema] = await Promise.all([
-        view.num_rows(), 
-        view.to_json({end_row: 1}), 
+        view.num_rows(),
+        view.to_json({end_row: 1}),
         view.schema(),
         this._table.schema()
     ]);
@@ -776,7 +776,7 @@ async function grid(div, view, hidden, task) {
     this.hypergrid._lazy_load = lazy_load;
 
     this.hypergrid._cache_update = async (s, e) => {
-        json = await fill_page(view, json, hidden, s, e); 
+        json = await fill_page(view, json, hidden, s, e);
         let new_range = estimate_range(this.hypergrid);
         if (is_subrange(new_range, [s, e])) {
             let rows = psp2hypergrid(json, schema, tschema, JSON.parse(this.getAttribute('row-pivots')), s, Math.min(e, nrows), nrows).rows;
@@ -787,14 +787,14 @@ async function grid(div, view, hidden, task) {
             return false;
         }
     }
-   
+
     this[PRIVATE].grid.set_data(json, schema, tschema, JSON.parse(this.getAttribute('row-pivots')));
     await this.hypergrid.canvas.resize();
     await this.hypergrid.canvas.resize();
 }
 
 global.registerPlugin("hypergrid", {
-    name: "Grid", 
+    name: "Grid",
     create: grid,
     selectMode: "toggle",
     deselectMode: "pivots",
