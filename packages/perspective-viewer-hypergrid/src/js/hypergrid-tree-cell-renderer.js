@@ -7,6 +7,9 @@
  *
  */
 
+const LINE_NODE_SPACE = 16;
+const NODE_RADIUS = 3;
+
 export function treeLineRendererPaint(gc, config) {
     var x = config.bounds.x;
     var y = config.bounds.y;
@@ -20,12 +23,18 @@ export function treeLineRendererPaint(gc, config) {
     var value = config.value.rollup;
     var leaf = config.value.isLeaf;
     var depth = config.value.rowPath.length - 1;
-    var parent = config.expanded;
     var lastChild = config.last;
 
-    var backgroundColor = config.backgroundColor;
+    var halfDown = y + height / 2;
+    var fullDown = y + height;
+
+    var color, backgroundColor;
     if (config.isSelected) {
+        color = config.foregroundSelectionColor;
         backgroundColor = config.backgroundSelectionColor;
+    } else {
+        color = config.color;
+        backgroundColor = config.backgroundColor;
     }
     if (config.isRowHovered && config.hoverRowHighlight.enabled && !config.isCellHovered) {
         backgroundColor = config.hoverRowHighlight.backgroundColor;
@@ -34,56 +43,56 @@ export function treeLineRendererPaint(gc, config) {
     }
 
     gc.save();
-    gc.cache.fillStyle = backgroundColor;
-    gc.rect(x, y, width, height);
+
+    // Fill in background
+    gc.fillStyle = backgroundColor;
     gc.fillRect(x, y, width, height);
 
-    var fgColor = config.isSelected ? config.foregroundSelectionColor : config.color;
-    gc.cache.strokeStyle = fgColor;
-    gc.cache.fillStyle = fgColor;
-    var xOffset = x;
-    var lineNodeSpace = 16;
-    var nodeRadius = 3;
-
-    // Draw vertical line
     gc.globalAlpha = 0.3;
-    gc.strokeStyle = fgColor;
+    gc.strokeStyle = gc.fillStyle = color;
 
     gc.beginPath();
+
+    // Draw vertical lines
     for (var i = 1; i <= depth; i++) {
-        xOffset += lineNodeSpace;
-        var lineHeight = lastChild && !parent ? height / 2 : height;
-        gc.moveTo(xOffset, y);
-        gc.lineTo(xOffset, y);
-        gc.lineTo(xOffset, y + lineHeight);
-        if (i === depth) {
-            gc.moveTo(xOffset, y + height / 2);
-            gc.lineTo(xOffset, y + height / 2);
-            gc.lineTo(xOffset + lineNodeSpace - nodeRadius, y + height / 2);
-        } else {
-            gc.lineTo(xOffset, y + height);
+        var lastOfRank = config.value.rowPath[i - 1][0] === "-";
+        var terminal = i === depth;
+
+        x += LINE_NODE_SPACE;
+
+        if (!terminal && lastOfRank) {
+            continue;
         }
+
+        var halfLine = terminal && (lastOfRank || (leaf && lastChild));
+
+        gc.moveTo(x, y);
+        gc.lineTo(x, halfLine ? halfDown : fullDown);
     }
 
-    // Draw node circle
+    // Anchor horizontal line
+    gc.moveTo(x, halfDown);
+    x += LINE_NODE_SPACE;
     if (!leaf) {
-        gc.moveTo(xOffset + lineNodeSpace + nodeRadius, y + height / 2);
-        gc.arc(xOffset + lineNodeSpace, y + height / 2, nodeRadius, 0, 2 * Math.PI);
-        if (config.isCellHovered) {
+        // Draw horizontal line to edge of node circle
+        gc.lineTo(x - NODE_RADIUS, halfDown);
+
+        // Draw node circle
+        gc.arc(x, halfDown, NODE_RADIUS, -Math.PI, Math.PI);
+
+        // Fill in circle (always for now)
+        if (true || config.isCellHovered) {
             gc.globalAlpha = 0.45;
             gc.fill();
             gc.globalAlpha = 0.3;
         }
-    } else {
-        gc.lineTo(xOffset + lineNodeSpace + nodeRadius, y + height / 2);
-    }
 
-    if (parent && !leaf) {
-        gc.globalAlpha = 0.8;
-        gc.fill();
-        gc.moveTo(xOffset + lineNodeSpace, y + height / 2 + nodeRadius);
-        gc.lineTo(xOffset + lineNodeSpace, y + height);
-        gc.globalAlpha = 0.3;
+        // Draw start of new vertical line
+        gc.moveTo(x, halfDown + NODE_RADIUS);
+        gc.lineTo(x, fullDown);
+    } else {
+        // Draw horizontal line without a node circle
+        gc.lineTo(x + NODE_RADIUS, halfDown);
     }
 
     gc.stroke();
@@ -96,11 +105,11 @@ export function treeLineRendererPaint(gc, config) {
     gc.textAlign = "start";
     gc.textBaseline = "middle";
     gc.font = config.isSelected ? config.foregroundSelectionFont : config.treeHeaderFont;
-    var cellTextOffset = xOffset + lineNodeSpace + 2 * nodeRadius + 3;
-    let formatted_value = config.formatValue(value, config._type);
-    config.minWidth = cellTextOffset + gc.getTextWidth(formatted_value) + 15;
-    var metrics = gc.getTextWidthTruncated(formatted_value, width - cellTextOffset + (x - 3), true);
-    var yOffset = y + height / 2;
-    gc.fillText(metrics.string ? metrics.string : formatted_value, cellTextOffset, yOffset);
+
+    var cellTextOffset = x + 2 * NODE_RADIUS + 3;
+    value = config.formatValue(value, config._type);
+    var metrics = gc.getTextWidthTruncated(value, width - cellTextOffset + (x - LINE_NODE_SPACE - 3), true);
+    gc.fillText(metrics.string ? metrics.string : value, cellTextOffset, halfDown);
+    config.minWidth = cellTextOffset + gc.getTextWidth(value) + 15;
     gc.restore();
 }
